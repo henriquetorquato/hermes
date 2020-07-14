@@ -1,34 +1,27 @@
 defmodule Server do
-  use Agent
+  use GenServer
 
-  def start do
-    spawn(Server, :init, [])
+  @impl true
+  def init(_args) do
+    Process.register(self(), :server)
+    { :ok, [] }
   end
 
-  def init do
-    Process.flag(:trap_exit, true)
-    loop([])
-  end
-
-  def loop(rooms) do
-    receive do
-      { :join, user, room } ->
-        sender = find_room(room, rooms)
-        if sender != nil do
-          send sender, { :join, user }
-          loop(rooms)
-        end
-
-        sender = spawn(Room, :init, [[user]])
-        loop([{ room, sender } | rooms])
-
-      { :message, room, username, content } ->
-        send find_room(room, rooms), { :message, username, content }
-        loop(rooms)
+  @impl true
+  def handle_call({:get_room, room}, _from, rooms) do
+    room = Enum.find rooms, nil, fn { name, _sender } -> room == name end
+    if room == nil do
+      room = spawn(Room, :init, [])
+      {:reply, room, rooms}
     end
+    {:reply, room, rooms}
   end
 
-  defp find_room(id, [{u, p} | _]) when u == id, do: p
-  defp find_room(_, []), do: nil
+  @impl true
+  def handle_call({:join, username, room}, user, rooms) do
+    {_name, sender} = GenServer.call(self(), {:get_room, room})
+    send sender, {:join, username, user}
+    {:noreply, rooms}
+  end
 
 end

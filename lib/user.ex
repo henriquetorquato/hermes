@@ -1,14 +1,16 @@
 defmodule User do
   use Agent
 
-  def init(username, server, room) do
-    Process.flag(:trap_exit, true)
-    send server, { :join, self(), room }
+  def init(username, address, room) do
+    server = {:server, address}
+    Node.connect(address)
+
+    send server, {:join, username, room}
     loop(username, server, room)
   end
 
-  def connect(username, server, room) do
-    spawn(User, :init, [username, server, room])
+  def connect(username, address, room) do
+    spawn(User, :init, [username, address, room])
   end
 
   def loop(username, server, room) do
