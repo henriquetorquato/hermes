@@ -14,17 +14,17 @@ defmodule User do
     IO.puts "#{originator}> #{content}"
   end
 
-  def send_message(pid, message) do
-    {_, server, user, room} = Agent.get pid, fn state -> state end
-    User.Supervisor.spawn_remote_task server, :message, [room, user, message]
+  def receive_info(info) do
+    IO.puts "[info] #{info}"
   end
 
-  def receive_info(content) do
-    IO.puts "[info] #{content}"
+  def send_message(pid, message) do
+    {_, server, user, room} = Agent.get pid, fn state -> state end
+    User.Supervisor.spawn_server_task server, :message, [room, user, message]
   end
 
   defp join_room(node, server, username, room) do
-    User.Supervisor.spawn_remote_task server, :join, [room, node, username]
+    User.Supervisor.spawn_server_task server, :join, [room, node, username]
   end
 
 end

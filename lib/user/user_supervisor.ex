@@ -39,7 +39,7 @@ defmodule User.Supervisor do
     end
   end
 
-  def spawn_remote_task(recipient, name, args) do
+  def spawn_server_task(recipient, name, args) do
     {Server.TaskSupervisor, recipient}
     |> Task.Supervisor.async(Server, name, args)
     |> Task.await

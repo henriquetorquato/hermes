@@ -10,11 +10,19 @@ defmodule Server.Supervisor do
 
     children = [
       {Task.Supervisor, name: Server.TaskSupervisor},
-      {Server, []}
+      {Server, [address]}
     ]
 
-    Supervisor.start_link children, [strategy: :one_for_all, debug: [:trace]]
+    Supervisor.start_link children, [strategy: :one_for_all, name: __MODULE__, debug: [:trace]]
     IO.puts "> Server supervisor started"
+  end
+
+  def stop do
+    Supervisor.stop __MODULE__, :shutdown
+  end
+
+  def start_link(args) do
+    Supervisor.start_link __MODULE__, args
   end
 
   def start_node(address) do
@@ -24,13 +32,9 @@ defmodule Server.Supervisor do
     node
   end
 
-  def create_room(name) do
-    Supervisor.start_child Server.Supervisor, {Room, [name]}
-  end
-
-  def spawn_remote_task(module, recipient, name, args) do
-    {Server.TaskSupervisor, recipient}
-    |> Task.Supervisor.async(module, name, args)
+  def spawn_client_task(recipient, name, args) do
+    {User.TaskSupervisor, recipient}
+    |> Task.Supervisor.async(User, name, args)
     |> Task.await
   end
 

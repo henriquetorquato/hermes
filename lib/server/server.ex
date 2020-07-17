@@ -2,17 +2,15 @@ defmodule Server do
   use GenServer
 
   def start_link(_args) do
-    GenServer.start_link Server, [], debug: [:trace]
+    GenServer.start_link Server, [], [name: :server, debug: [:trace]]
   end
 
   def join(room, user, username) do
     GenServer.cast :server, {:join, room, user, username}
-    IO.puts "User '#{user}' joined room '#{room}'"
   end
 
   def message(room, username, message) do
     GenServer.cast :server, {:message, room, username, message}
-    IO.puts "User '#{username}' sent message to room '#{room}'"
   end
 
   @impl true
@@ -26,14 +24,16 @@ defmodule Server do
     {{_name, room}, new_state} = get_or_create_room(roomname, rooms)
     send room, {:join, user, username}
 
+    IO.puts "> User '#{user}' joined room '#{roomname}'"
     {:noreply, new_state}
   end
 
   @impl true
   def handle_cast({:message, roomname, username, content}, rooms) do
-    room = get_room(roomname, rooms)
+    {_name, room} = get_room(roomname, rooms)
     send room, {:message, username, content}
 
+    IO.puts "> User '#{username}' sent message to room '#{roomname}'"
     {:noreply, rooms}
   end
 
@@ -41,7 +41,7 @@ defmodule Server do
     room = get_room(name, rooms)
     case room do
       nil ->
-        {:ok, room} = Server.Supervisor.create_room name
+        room = create_room name
         {room, [room | rooms]}
       _ -> {room, rooms}
     end
@@ -49,6 +49,11 @@ defmodule Server do
 
   defp get_room(name, rooms) do
     Enum.find rooms, nil, fn {room, _} -> room == name end
+  end
+
+  defp create_room(name) do
+    pid = spawn(Room, :init, [name])
+    {name, pid}
   end
 
 end
