@@ -20,7 +20,7 @@ defmodule Server do
   end
 
   def message(message) do
-    room = Room.Manager.get message[:recipient]
+    room = Room.Manager.get message.recipient
     Room.broadcast room, message
   end
 

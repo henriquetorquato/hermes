@@ -7,7 +7,7 @@ defmodule User do
     state = %User.State{
       name: username,
       room: roomname,
-      user: {:receiver, node()},
+      user: node(),
       server: {:receiver, server}
     }
 
@@ -17,7 +17,7 @@ defmodule User do
 
   def init(state) do
     send state.server, {:join, state.room, state.user, state.name}
-    {:ok, state}
+    state
   end
 
   def connect(address) do
@@ -34,20 +34,28 @@ defmodule User do
 
   def message(message) do
     state = Agent.get __MODULE__, fn state -> state end
-    send state.server, %Message{
-      originator: state.user,
+    send state.server, {:message, %Message{
+      originator: state.name,
       recipient: state.room,
       content: message,
       type: "message"
-    }
+    }}
+    :ok
+  end
+
+  def receive(message) do
+    case message.type do
+      "message" -> receive_message message
+      "info" -> receive_info message
+    end
   end
 
   def receive_message(message) do
-    IO.puts "#{message[:originator]}> #{message[:content]}"
+    IO.puts "#{message.originator}> #{message.content}"
   end
 
   def receive_info(info) do
-    IO.puts "[INFO] #{info[:content]}"
+    IO.puts "[INFO] #{info.content}"
   end
 
 end

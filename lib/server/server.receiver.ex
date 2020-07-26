@@ -9,7 +9,6 @@ defmodule Server.Receiver do
     receive do
       {:message, message} ->
         Server.message message
-        IO.inspect "> Received message #{message}"
       {:join, room, node, username} ->
         Server.join room, node, username
         IO.puts "> User '#{username}' joined room '#{room}'"
