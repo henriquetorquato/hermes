@@ -1,59 +1,30 @@
 defmodule Server do
   use GenServer
 
-  def start_link(_args) do
-    GenServer.start_link Server, [], [name: :server, debug: [:trace]]
+  # Server methods
+
+  def start do
+    spawn Server.Receiver, :start, []
+    DynamicSupervisor.start_link Room.Manager, :start_link, []
+    GenServer.start_link __MODULE__, [], name: :server
   end
 
-  def join(room, user, username) do
-    GenServer.cast :server, {:join, room, user, username}
+  def join(roomname, user, username) do
+    room = Room.Manager.get_or_create roomname
+    Room.join room, user, username
   end
 
-  def message(room, username, message) do
-    GenServer.cast :server, {:message, room, username, message}
+  def message(message) do
+    room = Room.Manager.get message[:recipient]
+    Room.broadcast room, message
   end
+
+  # GenServer API
 
   @impl true
   def init(args) do
     IO.puts "> Server started"
     {:ok, args}
-  end
-
-  @impl true
-  def handle_cast({:join, roomname, user, username}, rooms) do
-    {{_name, room}, new_state} = get_or_create_room(roomname, rooms)
-    send room, {:join, user, username}
-
-    IO.puts "> User '#{user}' joined room '#{roomname}'"
-    {:noreply, new_state}
-  end
-
-  @impl true
-  def handle_cast({:message, roomname, username, content}, rooms) do
-    {_name, room} = get_room(roomname, rooms)
-    send room, {:message, username, content}
-
-    IO.puts "> User '#{username}' sent message to room '#{roomname}'"
-    {:noreply, rooms}
-  end
-
-  defp get_or_create_room(name, rooms) do
-    room = get_room(name, rooms)
-    case room do
-      nil ->
-        room = create_room name
-        {room, [room | rooms]}
-      _ -> {room, rooms}
-    end
-  end
-
-  defp get_room(name, rooms) do
-    Enum.find rooms, nil, fn {room, _} -> room == name end
-  end
-
-  defp create_room(name) do
-    pid = spawn(Room, :init, [name])
-    {name, pid}
   end
 
 end

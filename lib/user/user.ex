@@ -1,30 +1,53 @@
 defmodule User do
   use Agent
 
-  def start(address, username, room) do
-    {node, server} = User.Supervisor.start(address, username)
-    {:ok, pid} = Agent.start_link fn -> {node, server, username, room} end
+  def start(username, address, roomname) do
+    server = connect address
 
-    join_room(node, server, username, room)
-    IO.puts "> Client '#{username}' started"
-    pid
+    state = %User.State{
+      name: username,
+      room: roomname,
+      user: {:receiver, node()},
+      server: {:receiver, server}
+    }
+
+    spawn(User.Receiver, :start, [])
+    Agent.start_link(__MODULE__, :init, [state], [name: __MODULE__])
   end
 
-  def receive_message(originator, content) do
-    IO.puts "#{originator}> #{content}"
+  def init(state) do
+    send state.server, {:join, state.room, state.user, state.name}
+    {:ok, state}
+  end
+
+  def connect(address) do
+    server = String.to_atom "server@#{address}"
+    case Node.connect server do
+      :true ->
+        IO.puts "> User connected to '#{server}'"
+        server
+      :false ->
+        IO.puts "> Failed to connect to '#{server}'"
+        exit -1
+    end
+  end
+
+  def message(message) do
+    state = Agent.get __MODULE__, fn state -> state end
+    send state.server, %Message{
+      originator: state.user,
+      recipient: state.room,
+      content: message,
+      type: "message"
+    }
+  end
+
+  def receive_message(message) do
+    IO.puts "#{message[:originator]}> #{message[:content]}"
   end
 
   def receive_info(info) do
-    IO.puts "[info] #{info}"
-  end
-
-  def send_message(pid, message) do
-    {_, server, user, room} = Agent.get pid, fn state -> state end
-    User.Supervisor.spawn_server_task server, :message, [room, user, message]
-  end
-
-  defp join_room(node, server, username, room) do
-    User.Supervisor.spawn_server_task server, :join, [room, node, username]
+    IO.puts "[INFO] #{info[:content]}"
   end
 
 end
