@@ -2,15 +2,15 @@
 
 ## Create session using compiled code
 ```
-iex --sname `session_name` -S mix
+iex --sname `node_name` -S mix
 ```
 
 ## Start server instance
 ```
-Server.Supervisor.start `address`
+Server.start
 ```
 
 ## Create user instance
 ```
-User.start `address`, `username`, `roomname`
+User.start `username`, `address`, `roomname`
 ```
