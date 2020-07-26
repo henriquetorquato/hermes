@@ -1,6 +1,8 @@
 defmodule Message do
-  defstruct originator: "",
-    recipient: "",
-    content: "",
-    type: ""
+  defstruct [
+    :originator,
+    :recipient,
+    :content,
+    :type
+  ]
 end

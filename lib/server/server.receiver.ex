@@ -1,13 +1,8 @@
 defmodule Server.Receiver do
   use Agent
 
-  def start do
-    Agent.start_link __MODULE__, :init, [], [name: :receiver, debug: [:trace]]
-  end
-
-  def init do
-    IO.puts "> Server receiver started"
-    receiver()
+  def start_link(opts) do
+    Agent.start __MODULE__, :receiver, [], opts
   end
 
   def receiver do

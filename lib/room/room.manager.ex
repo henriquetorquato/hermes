@@ -5,7 +5,7 @@ defmodule Room.Manager do
     DynamicSupervisor.init strategy: :one_for_one, max_children: 500
   end
 
-  def start_link do
+  def start_link(_) do
     DynamicSupervisor.start_link __MODULE__, :ok, name: __MODULE__
   end
 

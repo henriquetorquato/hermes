@@ -2,25 +2,30 @@ defmodule Room do
   use Agent
 
   def init(_args) do
-    {:ok, []}
+    []
   end
 
-  def start_link([], name) do
+  def start_link(name) do
     Agent.start_link __MODULE__, :init, [name], name: String.to_atom name
   end
 
-  def join(room, node, username) do
+  def join(pid, user, username) do
+    {_, node} = user
     Node.connect node
-    user = {username, node}
 
-    Agent.get_and_update room, fn users -> [user | users] end
+    Agent.update pid, fn users -> [{username, node} | users] end
+
+    broadcast pid, %Message{
+      type: "info",
+      content: "User '#{username}' joined!"
+    }
   end
 
   def broadcast(pid, message) do
     users = get_users pid
-    case message[:type] do
+    case message.type do
       "message" ->
-        users = not_user message[:originator], users
+        users = not_user message.originator, users
         broadcast pid, message, users
       "info" ->
         broadcast pid, message, users
