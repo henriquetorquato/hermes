@@ -38,3 +38,7 @@ I'm a great fan of the manga *JoJo's Bizarre Adventures*, and the name is a dire
 In short, she has the ability to duplicate and destroy objects. Thus the reference.
 
 ![Hermes](res/hermes.png)
+
+## TO-DO
+
+- [ ] Add an user supervisor to emmit "exit" events
